@@ -1,32 +1,23 @@
 # 🩺 Healthcare Monitoring AI Agent
 
-This project is a **Week 1 submission** for the Healthcare AI Agent program.  
-It provides a **Gradio-based interface** built in Google Colab for tracking health metrics and medication reminders.
+This repo contains Week 1 (Gradio) and Week 2 (Streamlit) work.
 
----
+## Files
+- `Healthcare_Monitoring_AI_Agent.ipynb` — Week 1 Colab notebook (Gradio prototype)
+- `streamlit_app.py` — Week 2 Streamlit app (CSV import, analytics, interaction checker)
+- `drug_interactions.csv` — sample interaction mapping
+- `requirements.txt` — Python dependencies
+- `.gitignore` — ignores DB/caches
 
-## 🚀 Features
-- Add, view, and reset medication reminders.
-- Save and visualize health metrics (steps, calories, etc.).
-- Check upcoming reminders within ±15 minutes.
-- Built with Gradio + SQLite + Pandas.
+## Run locally
+1. `pip install -r requirements.txt`
+2. `streamlit run streamlit_app.py`
+3. Open http://localhost:8501
 
----
+## Quick demo steps (to record)
+1. Open deployed app or local URL
+2. Add medication and View Schedule
+3. Save a metric, View Metrics, show charts
+4. Upload CSV → Import to DB → show charts
+5. Check drug interaction using example drugs
 
-## 📂 Files
-| File | Description |
-|------|--------------|
-| `app.py` | Main Gradio app |
-| `Week1_Gradio_App.ipynb` | Colab notebook |
-| `requirements.txt` | Dependencies |
-| `README.md` | Project documentation |
-
----
-
-## ▶️ Run in Google Colab
-[**Open in Colab**](https://colab.research.google.com/github/Syntax-Syndicate67/HealthCare-Monitoring-AI-Agent/blob/main/Week1_Gradio_App.ipynb)
-
----
-
-## 🧑‍💻 Author
-Syntax-Syndicate67  
