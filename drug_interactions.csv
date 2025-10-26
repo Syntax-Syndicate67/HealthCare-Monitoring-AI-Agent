@@ -1,0 +1,4 @@
+drug_a,drug_b,interaction
+Paracetamol,Warfarin,May increase bleeding risk
+Aspirin,Warfarin,Increased bleeding risk
+Ibuprofen,Prednisone,May increase stomach irritation
