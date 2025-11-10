@@ -1,4 +1,4 @@
-# --- Streamlit Healthcare Monitoring AI Agent (Week 3) ---
+# --- Streamlit Healthcare Monitoring AI Agent (Week 4: Local Med Lookup + Quick Summary) ---
 import streamlit as st
 import sqlite3
 import pandas as pd
@@ -7,6 +7,7 @@ import os
 import plotly.express as px
 from fpdf import FPDF
 import xml.etree.ElementTree as ET
+import textwrap
 
 # ---------------- Database Setup ----------------
 DB_PATH = "health_data.db"
@@ -44,9 +45,40 @@ def init_db():
 
 init_db()
 
+# ---------------- Helper: local medication info ----------------
+def load_med_info(path="med_info.csv"):
+    """Load local medication information CSV from repo root. Return DataFrame or None."""
+    if not os.path.exists(path):
+        return None
+    try:
+        df = pd.read_csv(path)
+        # ensure expected columns exist
+        expected = {"drug_name","uses","side_effects","precautions"}
+        if not expected.issubset(set(df.columns)):
+            return None
+        return df
+    except Exception:
+        return None
+
+def med_lookup_local(query, df_med):
+    """Search local med DataFrame for query and return formatted text (or message)."""
+    if df_med is None:
+        return "Local medication DB not found (med_info.csv missing or invalid). Add med_info.csv to repo root."
+    q = str(query or "").strip().lower()
+    if not q:
+        return "Please enter a medication name to search."
+    matches = df_med[df_med["drug_name"].str.lower().str.contains(q)]
+    if matches.empty:
+        return f"No local records found for '{query}'."
+    out = []
+    for _, r in matches.iterrows():
+        s = f"Name: {r['drug_name']}\nUses: {r['uses']}\nSide effects: {r['side_effects']}\nPrecautions: {r['precautions']}"
+        out.append(s)
+    return "\n\n".join(out)
+
 # ---------------- Page Title ----------------
 st.set_page_config(page_title="Healthcare Monitoring AI Agent", layout="wide")
-st.title("🩺 Healthcare Monitoring AI Agent — Week 3 (Streamlit Edition)")
+st.title("🩺 Healthcare Monitoring AI Agent — Week 4 (Local Tools)")
 
 tabs = st.tabs([
     "💊 Medications",
@@ -91,8 +123,8 @@ with tabs[0]:
 
     # --- Interaction Checker ---
     st.subheader("Check Drug Interaction")
-    drug_a = st.text_input("Drug A")
-    drug_b = st.text_input("Drug B")
+    drug_a = st.text_input("Drug A", key="int_drug_a")
+    drug_b = st.text_input("Drug B", key="int_drug_b")
     if st.button("Check Interaction"):
         if not os.path.exists("drug_interactions.csv"):
             st.error("drug_interactions.csv not found. Please add one in your repo.")
@@ -106,6 +138,17 @@ with tabs[0]:
                 st.warning(found.iloc[0]["interaction"])
             else:
                 st.success("✅ No known interactions found in local database.")
+
+    # --- Agent Tools: Local Medication Info Lookup ---
+    st.subheader("Agent Tools — Local Medication Info")
+    med_query = st.text_input("Search medication info (local)", placeholder="e.g. Paracetamol", key="med_lookup")
+    if st.button("Lookup Local Medication Info"):
+        df_med = load_med_info("med_info.csv")
+        info = med_lookup_local(med_query, df_med)
+        # show nicely wrapped or code block if multi-line
+        st.code(textwrap.fill(info, width=200))
+
+    st.markdown("**Tip:** To extend results, update `med_info.csv` in the repository with columns: `drug_name,uses,side_effects,precautions`.")
 
 # =====================================================
 # TAB 2 — HEALTH METRICS
@@ -129,8 +172,14 @@ with tabs[1]:
             st.warning("No metrics yet.")
         else:
             st.dataframe(dfm, use_container_width=True)
-            st.plotly_chart(px.line(dfm, x="date", y="steps", title="Steps over Time"), use_container_width=True)
-            st.plotly_chart(px.line(dfm, x="date", y="calories", title="Calories over Time"), use_container_width=True)
+            # ensure date parsed for plots
+            try:
+                df_plot = dfm.copy()
+                df_plot["date"] = pd.to_datetime(df_plot["date"])
+            except Exception:
+                df_plot = dfm
+            st.plotly_chart(px.line(df_plot, x="date", y="steps", title="Steps over Time"), use_container_width=True)
+            st.plotly_chart(px.line(df_plot, x="date", y="calories", title="Calories over Time"), use_container_width=True)
 
 # =====================================================
 # TAB 3 — UPLOAD & ANALYTICS (CSV + JSON + XML)
@@ -205,7 +254,21 @@ with tabs[2]:
         except Exception as e:
             st.error(f"XML error: {e}")
 
+    # --- Quick DB summary (Week 4) ---
+    st.divider()
+    st.subheader("Quick DB Summary")
+    if st.button("Show quick DB summary"):
+        df_all = pd.read_sql("SELECT date,steps,calories FROM health_metrics", conn, parse_dates=["date"])
+        if df_all.empty:
+            st.info("No metrics recorded yet.")
+        else:
+            st.write("Total records:", len(df_all))
+            st.write("Date range:", df_all['date'].min().date(), "to", df_all['date'].max().date())
+            st.write("Average daily steps:", int(df_all['steps'].mean()))
+            st.write("Average daily calories:", int(df_all['calories'].mean()))
+
     # --- Export buttons ---
+    st.divider()
     st.subheader("Export Your Data")
     col1, col2 = st.columns(2)
     with col1:
@@ -279,4 +342,4 @@ with tabs[4]:
             st.download_button("Download health_report.pdf", make_pdf(), "health_report.pdf", "application/pdf")
 
 st.markdown("---")
-st.caption("Week 3 • Goals + JSON/XML Import + Insights + PDF • Healthcare Monitoring AI Agent")
+st.caption("Week 4 • Local medication lookup + Quick DB summary • Healthcare Monitoring AI Agent")
